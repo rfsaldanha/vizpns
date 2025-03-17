@@ -132,6 +132,71 @@ tb_dicotomicos <- tbl(conn, "tb_dicotomicos") %>%
   ) %>%
   filter(!(abr_tipo == "Total" & abr_nome == "Capital"))
 
+# Indicadores tb_policotomicos
+tb_policotomicos <- tbl(conn, "tb_policomicos") %>%
+  collect() %>%
+  # Patch para indicadores repetidos
+  distinct() %>%
+  mutate(
+    valor = as.numeric(stringr::str_replace(
+      string = valor,
+      pattern = ",",
+      replacement = "."
+    )),
+    interv_inf = as.numeric(stringr::str_replace(
+      string = interv_inf,
+      pattern = ",",
+      replacement = "."
+    )),
+    interv_sup = as.numeric(stringr::str_replace(
+      string = interv_sup,
+      pattern = ",",
+      replacement = "."
+    )),
+    cv = as.numeric(stringr::str_replace(
+      string = cv,
+      pattern = ",",
+      replacement = "."
+    ))
+  ) %>%
+  mutate(
+    abr_tipo = recode(
+      abr_tipo,
+      "uf" = "Unidades da Federação",
+      "região" = "Grandes Regiões",
+      "urb_rur" = "Situação urbano/rural",
+      "gescol_resp_max" = "Escolaridade do responsável pelo domicílio",
+      "rend_per_capita" = "Rendimento domiciliar per capita",
+      "sexo" = "Sexo",
+      "raça" = "Raça/Cor",
+      "fx_idade" = "Faixa de idade",
+      "fx_idade_18" = "Faixa de idade (18 anos ou mais)",
+      "fx_idade_S" = "Faixa de idade (18 anos ou mais)",
+      "fx_idade_s" = "Faixa de idade (18 anos ou mais)",
+      "fx_idade_25" = "Faixa de idade (25 anos ou mais)",
+      "fx_idade_60" = "Faixa de idade (60 anos ou mais)",
+      "fx_idade_acid" = "Faixa de idade (18 anos ou mais)",
+      "fx_idade_def" = "Faixa de idade (2 anos ou mais)",
+      "fx_idade_4049" = "Faixa de idade (40 a 49 anos)",
+      "fx_idade_2564" = "Faixa de idade (25 a 64 anos)",
+      "fx_idade_5069" = "Faixa de idade (50 a 69 anos)",
+      "capital" = "Capitais",
+      "Capital" = "Capitais",
+      "gescol" = "Escolaridade",
+      "total" = "Total"
+    ),
+    abr_nome = recode(
+      abr_nome,
+      "capital" = "Total Capitais",
+      "brasil" = "Brasil",
+      "Capital" = "Total Capitais",
+      "Brasil" = "Brasil",
+      "urbano" = "Urbano",
+      "rural" = "Rural"
+    )
+  ) %>%
+  filter(!(abr_tipo == "Total" & abr_nome == "Capital"))
+
 # Dicionário
 dic <- tbl(conn, "tb_dicionario") %>%
   collect() %>%
@@ -177,7 +242,8 @@ ui <- navbarPage(
                 "G - Deficiências",
                 "S - Saúde da Mulher / Pré-natal",
                 "S - Saúde da Mulher / Assistência ao parto",
-                "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias"
+                "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias",
+                "Y - Atividade Sexual"
               )
             )
           )
@@ -280,7 +346,8 @@ ui <- navbarPage(
                 "K - Saúde dos idosos",
                 "G - Deficiências",
                 "S - Saúde da Mulher / Pré-natal",
-                "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias"
+                "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias",
+                "Y - Atividade Sexual"
               )
             )
           )
