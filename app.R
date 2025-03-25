@@ -132,8 +132,8 @@ tb_dicotomicos <- tbl(conn, "tb_dicotomicos") %>%
   ) %>%
   filter(!(abr_tipo == "Total" & abr_nome == "Capital"))
 
-# Indicadores tb_policotomicos
-tb_policotomicos <- tbl(conn, "tb_policomicos") %>%
+# Indicadores tb_politomicos
+tb_politomicos <- tbl(conn, "tb_politomicos") %>%
   collect() %>%
   # Patch para indicadores repetidos
   distinct() %>%
