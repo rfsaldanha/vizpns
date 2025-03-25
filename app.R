@@ -197,6 +197,71 @@ tb_politomicos <- tbl(conn, "tb_politomicos") %>%
   ) %>%
   filter(!(abr_tipo == "Total" & abr_nome == "Capital"))
 
+# Indicadores tb_media
+tb_media <- tbl(conn, "tb_media") %>%
+  collect() %>%
+  # Patch para indicadores repetidos
+  distinct() %>%
+  mutate(
+    valor = as.numeric(stringr::str_replace(
+      string = valor,
+      pattern = ",",
+      replacement = "."
+    )),
+    interv_inf = as.numeric(stringr::str_replace(
+      string = interv_inf,
+      pattern = ",",
+      replacement = "."
+    )),
+    interv_sup = as.numeric(stringr::str_replace(
+      string = interv_sup,
+      pattern = ",",
+      replacement = "."
+    )),
+    cv = as.numeric(stringr::str_replace(
+      string = cv,
+      pattern = ",",
+      replacement = "."
+    ))
+  ) %>%
+  mutate(
+    abr_tipo = recode(
+      abr_tipo,
+      "uf" = "Unidades da Federação",
+      "região" = "Grandes Regiões",
+      "urb_rur" = "Situação urbano/rural",
+      "gescol_resp_max" = "Escolaridade do responsável pelo domicílio",
+      "rend_per_capita" = "Rendimento domiciliar per capita",
+      "sexo" = "Sexo",
+      "raça" = "Raça/Cor",
+      "fx_idade" = "Faixa de idade",
+      "fx_idade_18" = "Faixa de idade (18 anos ou mais)",
+      "fx_idade_S" = "Faixa de idade (18 anos ou mais)",
+      "fx_idade_s" = "Faixa de idade (18 anos ou mais)",
+      "fx_idade_25" = "Faixa de idade (25 anos ou mais)",
+      "fx_idade_60" = "Faixa de idade (60 anos ou mais)",
+      "fx_idade_acid" = "Faixa de idade (18 anos ou mais)",
+      "fx_idade_def" = "Faixa de idade (2 anos ou mais)",
+      "fx_idade_4049" = "Faixa de idade (40 a 49 anos)",
+      "fx_idade_2564" = "Faixa de idade (25 a 64 anos)",
+      "fx_idade_5069" = "Faixa de idade (50 a 69 anos)",
+      "capital" = "Capitais",
+      "Capital" = "Capitais",
+      "gescol" = "Escolaridade",
+      "total" = "Total"
+    ),
+    abr_nome = recode(
+      abr_nome,
+      "capital" = "Total Capitais",
+      "brasil" = "Brasil",
+      "Capital" = "Total Capitais",
+      "Brasil" = "Brasil",
+      "urbano" = "Urbano",
+      "rural" = "Rural"
+    )
+  ) %>%
+  filter(!(abr_tipo == "Total" & abr_nome == "Capital"))
+
 # Dicionário
 dic <- tbl(conn, "tb_dicionario") %>%
   collect() %>%
@@ -583,7 +648,9 @@ server <- function(input, output) {
       #         mutate(abr_nome = fct_relevel(abr_nome, c("Rondônia", "Acre", "Amazonas", "Roraima", "Pará", "Amapá", "Tocantins", "Maranhão", "Piauí", "Ceará", "Rio Grande do Norte", "Paraíba", "Pernambuco", "Alagoas", "Sergipe", "Bahia", "Minas Gerais", "Espírito Santo", "Rio de Janeiro", "São Paulo", "Paraná", "Santa Catarina", "Rio Grande do Sul", "Mato Grosso do Sul", "Mato Grosso", "Goiás", "Distrito Federal")))
       # }
 
-      res
+      res %>%
+        select(-TS_INSERTION) %>%
+        distinct()
     }
   })
 
@@ -696,83 +763,160 @@ server <- function(input, output) {
               hc_yAxis(max = 100)
           }
         } else {
-          indi_chart <- highchart() %>%
-            hc_xAxis(categories = dados()$abr_nome) %>%
-            hc_legend(enabled = FALSE) %>%
-            hc_title(text = titulo) %>%
-            hc_tooltip(crosshairs = TRUE, shared = TRUE, valueDecimals = 2) %>%
-            hc_exporting(
-              enabled = TRUE,
-              buttons = list(
-                contextButton = list(menuItems = lista_opcoes_grafico)
+          if (tab_indicador() == "tb_dicotomicos") {
+            indi_chart <- highchart() %>%
+              hc_xAxis(categories = dados()$abr_nome) %>%
+              hc_legend(enabled = FALSE) %>%
+              hc_title(text = titulo) %>%
+              hc_tooltip(
+                crosshairs = TRUE,
+                shared = TRUE,
+                valueDecimals = 2
+              ) %>%
+              hc_exporting(
+                enabled = TRUE,
+                buttons = list(
+                  contextButton = list(menuItems = lista_opcoes_grafico)
+                )
+              ) %>%
+              hc_credits(
+                enabled = TRUE,
+                text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
+                href = "https://bigdata.icict.fiocruz.br"
               )
-            ) %>%
-            hc_credits(
-              enabled = TRUE,
-              text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
-              href = "https://bigdata.icict.fiocruz.br"
-            )
 
-          # Cores condicionais para as barras
-          if (input$sel_abr_tipo == "Unidades da Federação") {
+            # Cores condicionais para as barras
+            if (input$sel_abr_tipo == "Unidades da Federação") {
+              indi_chart <- indi_chart %>%
+                hc_add_series(
+                  type = "bar",
+                  data = dados(),
+                  hcaes(
+                    y = valor,
+                    x = abr_nome,
+                    color = c(
+                      rep("#377EB8", 7),
+                      rep("#4DAF4A", 9),
+                      rep("#984EA3", 4),
+                      rep("#FF7F00", 3),
+                      rep("#00CCCC", 4)
+                    )
+                  ),
+                  name = "Valor"
+                )
+            } else if (input$sel_abr_tipo == "Grandes Regiões") {
+              indi_chart <- indi_chart %>%
+                hc_add_series(
+                  type = "bar",
+                  data = dados(),
+                  hcaes(
+                    y = valor,
+                    x = abr_nome,
+                    color = c(
+                      "#377EB8",
+                      "#4DAF4A",
+                      "#984EA3",
+                      "#FF7F00",
+                      "#00CCCC"
+                    )
+                  ),
+                  name = "Valor"
+                )
+            } else {
+              indi_chart <- indi_chart %>%
+                hc_add_series(
+                  type = "bar",
+                  data = dados(),
+                  hcaes(y = valor, x = abr_nome),
+                  color = cor_barra,
+                  name = "Valor"
+                )
+            }
+
+            # Adiciona intervalo de confiança
             indi_chart <- indi_chart %>%
               hc_add_series(
+                data = list_parse(mutate(
+                  dados(),
+                  low = interv_inf,
+                  high = interv_sup
+                )),
+                type = "errorbar",
+                color = "black",
+                name = "Intervalo de confiança"
+              )
+          } else if (tab_indicador() == "tb_politomicos") {
+            res <- dados() %>%
+              distinct() %>%
+              mutate(
+                label_error_bar = paste("Intervalo de confiança", tipo_valor)
+              )
+
+            print(res, n = 10000)
+
+            indi_chart <- highchart() %>%
+              # hc_chart(
+              #   events = list(
+              #     load = JS(
+              #       "function () {
+              #               this.series[0].update({
+              #                 id: 'secondColumnSeries'
+              #               }, false);
+              #               this.series[1].update({
+              #                 id: 'firstColumnSeries'
+              #               }, false);
+              #               this.series[2].update({
+              #                 linkedTo: 'secondColumnSeries'
+              #               }, false);
+              #               this.series[3].update({
+              #                 linkedTo: 'firstColumnSeries'
+              #               });
+              #             }"
+              #     )
+              #   )
+              # ) %>%
+              hc_xAxis(categories = res$abr_nome) %>%
+              hc_legend(enabled = TRUE) %>%
+              hc_title(text = titulo) %>%
+              hc_tooltip(
+                crosshairs = TRUE,
+                shared = TRUE,
+                valueDecimals = 2
+              ) %>%
+              hc_exporting(
+                enabled = TRUE,
+                buttons = list(
+                  contextButton = list(menuItems = lista_opcoes_grafico)
+                )
+              ) %>%
+              hc_credits(
+                enabled = TRUE,
+                text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
+                href = "https://bigdata.icict.fiocruz.br"
+              ) %>%
+              hc_add_series(
                 type = "bar",
-                data = dados(),
+                data = res,
                 hcaes(
                   y = valor,
                   x = abr_nome,
-                  color = c(
-                    rep("#377EB8", 7),
-                    rep("#4DAF4A", 9),
-                    rep("#984EA3", 4),
-                    rep("#FF7F00", 3),
-                    rep("#00CCCC", 4)
-                  )
+                  group = tipo_valor
                 ),
-                name = "Valor"
-              )
-          } else if (input$sel_abr_tipo == "Grandes Regiões") {
-            indi_chart <- indi_chart %>%
+                id = unique(res$tipo_valor)
+              ) %>%
               hc_add_series(
-                type = "bar",
-                data = dados(),
+                data = res,
+                type = "errorbar",
                 hcaes(
-                  y = valor,
                   x = abr_nome,
-                  color = c(
-                    "#377EB8",
-                    "#4DAF4A",
-                    "#984EA3",
-                    "#FF7F00",
-                    "#00CCCC"
-                  )
+                  low = interv_inf,
+                  high = interv_sup,
+                  group = label_error_bar,
+                  grouping = TRUE
                 ),
-                name = "Valor"
-              )
-          } else {
-            indi_chart <- indi_chart %>%
-              hc_add_series(
-                type = "bar",
-                data = dados(),
-                hcaes(y = valor, x = abr_nome),
-                color = cor_barra,
-                name = "Valor"
+                linkedTo = unique(res$tipo_valor)
               )
           }
-
-          # Adiciona intervalo de confiança
-          indi_chart <- indi_chart %>%
-            hc_add_series(
-              data = list_parse(mutate(
-                dados(),
-                low = interv_inf,
-                high = interv_sup
-              )),
-              type = "errorbar",
-              color = "black",
-              name = "Intervalo de confiança"
-            )
 
           # Proporção, eixo X até 100
           if (input$sel_unidade == "Percentual" & input$sel_eixo_x == 1) {
@@ -916,13 +1060,16 @@ server <- function(input, output) {
 
     res <- dados() %>%
       select(
-        `Abrangência` = abr_tipo,
-        Ano = ano,
-        Nome = abr_nome,
-        Valor = valor,
-        `Limite inferior` = interv_inf,
-        `Limite superior` = interv_sup,
-        CV = cv
+        any_of(c(
+          `Abrangência` = "abr_tipo",
+          Ano = "ano",
+          Nome = "abr_nome",
+          `Tipo valor` = "tipo_valor",
+          Valor = "valor",
+          `Limite inferior` = "interv_inf",
+          `Limite superior` = "interv_sup",
+          CV = "cv"
+        ))
       )
 
     datatable(
@@ -947,13 +1094,16 @@ server <- function(input, output) {
     content = function(file) {
       res <- dados() %>%
         select(
-          `Abrangência` = abr_tipo,
-          Ano = ano,
-          Nome = abr_nome,
-          Valor = valor,
-          `Intervalor inferior` = interv_inf,
-          `Intervalor superior` = interv_sup,
-          CV = cv
+          any_of(c(
+            `Abrangência` = "abr_tipo",
+            Ano = "ano",
+            Nome = "abr_nome",
+            `Tipo valor` = "tipo_valor",
+            Valor = "valor",
+            `Limite inferior` = "interv_inf",
+            `Limite superior` = "interv_sup",
+            CV = "cv"
+          ))
         )
 
       write_excel_csv2(x = res, path = file, na = "")
@@ -967,19 +1117,22 @@ server <- function(input, output) {
     content = function(file) {
       res <- dados() %>%
         select(
-          `Abrangência` = abr_tipo,
-          Ano = ano,
-          Nome = abr_nome,
-          Valor = valor,
-          `Intervalor inferior` = interv_inf,
-          `Intervalor superior` = interv_sup
+          any_of(c(
+            `Abrangência` = "abr_tipo",
+            Ano = "ano",
+            Nome = "abr_nome",
+            `Tipo valor` = "tipo_valor",
+            Valor = "valor",
+            `Limite inferior` = "interv_inf",
+            `Limite superior` = "interv_sup",
+            CV = "cv"
+          ))
         )
       write_xlsx(x = res, path = file)
     }
   )
 
   # Aba comparação
-
   output$comp_sel_abr_UI <- renderUI({
     req(input$comp_sel_modulo)
 
