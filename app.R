@@ -266,6 +266,7 @@ tb_media <- tbl(conn, "tb_media") %>%
 dic <- tbl(conn, "tb_dicionario") %>%
   collect() %>%
   mutate(unidade = case_when(unidade == "Proporção" ~ "Percentual")) %>%
+  replace_na(list(unidade = "Média")) |>
   filter(!(cod %in% c("P025P", "P008P")))
 # # Patch, aguardando correção no dicionário
 # mutate(modulo = if_else(cod == "O011P", "O - Acidentes", modulo))
@@ -308,7 +309,8 @@ ui <- navbarPage(
                 "S - Saúde da Mulher / Pré-natal",
                 "S - Saúde da Mulher / Assistência ao parto",
                 "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias",
-                "Y - Atividade Sexual"
+                "Y - Atividade Sexual",
+                "Z - Paternidade e Pré-natal do parceiro"
               )
             )
           )
@@ -412,7 +414,8 @@ ui <- navbarPage(
                 "G - Deficiências",
                 "S - Saúde da Mulher / Pré-natal",
                 "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias",
-                "Y - Atividade Sexual"
+                "Y - Atividade Sexual",
+                "Z - Paternidade e Pré-natal do parceiro"
               )
             )
           )
@@ -737,7 +740,7 @@ server <- function(input, output) {
             hc_credits(
               enabled = TRUE,
               text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
-              href = "https://bigdata.icict.fiocruz.br"
+              href = "https://pcdas.icict.fiocruz.br"
             ) %>%
             hc_add_series(
               type = "bar",
@@ -782,7 +785,7 @@ server <- function(input, output) {
               hc_credits(
                 enabled = TRUE,
                 text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
-                href = "https://bigdata.icict.fiocruz.br"
+                href = "https://pcdas.icict.fiocruz.br"
               )
 
             # Cores condicionais para as barras
@@ -852,8 +855,6 @@ server <- function(input, output) {
                 label_error_bar = paste("Intervalo de confiança", tipo_valor)
               )
 
-            print(res, n = 10000)
-
             indi_chart <- highchart() %>%
               # hc_chart(
               #   events = list(
@@ -892,7 +893,7 @@ server <- function(input, output) {
               hc_credits(
                 enabled = TRUE,
                 text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
-                href = "https://bigdata.icict.fiocruz.br"
+                href = "https://pcdas.icict.fiocruz.br"
               ) %>%
               hc_add_series(
                 type = "bar",
@@ -915,6 +916,47 @@ server <- function(input, output) {
                   grouping = TRUE
                 ),
                 linkedTo = unique(res$tipo_valor)
+              )
+          } else if (tab_indicador() == "tb_media") {
+            res <- dados() %>%
+              distinct()
+
+            indi_chart <- highchart() %>%
+              hc_xAxis(categories = res$abr_nome) %>%
+              hc_legend(enabled = FALSE) %>%
+              hc_title(text = titulo) %>%
+              hc_tooltip(
+                crosshairs = TRUE,
+                shared = TRUE,
+                valueDecimals = 2
+              ) %>%
+              hc_exporting(
+                enabled = TRUE,
+                buttons = list(
+                  contextButton = list(menuItems = lista_opcoes_grafico)
+                )
+              ) %>%
+              hc_credits(
+                enabled = TRUE,
+                text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
+                href = "https://pcdas.icict.fiocruz.br"
+              ) %>%
+              hc_add_series(
+                type = "bar",
+                data = res,
+                hcaes(
+                  y = valor,
+                  x = abr_nome
+                )
+              ) %>%
+              hc_add_series(
+                data = res,
+                type = "errorbar",
+                hcaes(
+                  x = abr_nome,
+                  low = interv_inf,
+                  high = interv_sup
+                )
               )
           }
 
@@ -1257,7 +1299,7 @@ server <- function(input, output) {
           hc_credits(
             enabled = TRUE,
             text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
-            href = "https://bigdata.icict.fiocruz.br"
+            href = "https://pcdas.icict.fiocruz.br"
           ) %>%
           hc_add_series(
             type = "bar",
@@ -1305,7 +1347,7 @@ server <- function(input, output) {
           hc_credits(
             enabled = TRUE,
             text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
-            href = "https://bigdata.icict.fiocruz.br"
+            href = "https://pcdas.icict.fiocruz.br"
           ) %>%
           hc_add_series(
             type = "bar",
