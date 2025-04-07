@@ -265,11 +265,13 @@ tb_media <- tbl(conn, "tb_media") %>%
 # Dicionário
 dic <- tbl(conn, "tb_dicionario") %>%
   collect() %>%
-  mutate(unidade = case_when(unidade == "Proporção" ~ "Percentual")) %>%
-  replace_na(list(unidade = "Média")) |>
+  mutate(
+    unidade = case_when(
+      unidade == "Proporção" ~ "Percentual",
+      .default = unidade
+    )
+  ) %>%
   filter(!(cod %in% c("P025P", "P008P")))
-# # Patch, aguardando correção no dicionário
-# mutate(modulo = if_else(cod == "O011P", "O - Acidentes", modulo))
 
 # Base mapa UFs
 uf_shp <- readRDS(file = "data/uf_shp.RDS")
