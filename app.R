@@ -569,7 +569,8 @@ server <- function(input, output) {
 
     if (
       input$sel_abr_tipo == "Unidades da Federação" &
-        input$sel_ano %in% c("2013", "2019")
+        input$sel_ano %in% c("2013", "2019") &
+        tab_indicador() != "tb_politomicos"
     ) {
       ops <- c("Barras", "Mapa")
     } else {
