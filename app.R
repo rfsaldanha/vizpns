@@ -312,7 +312,8 @@ ui <- navbarPage(
                 "S - Saúde da Mulher / Assistência ao parto",
                 "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias",
                 "Y - Atividade Sexual",
-                "Z - Paternidade e Pré-natal do parceiro"
+                "Z - Paternidade e Pré-natal do parceiro",
+                "M - Características do trabalho e apoio social"
               )
             )
           )
@@ -417,7 +418,8 @@ ui <- navbarPage(
                 "S - Saúde da Mulher / Pré-natal",
                 "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias",
                 "Y - Atividade Sexual",
-                "Z - Paternidade e Pré-natal do parceiro"
+                "Z - Paternidade e Pré-natal do parceiro",
+                "M - Características do trabalho e apoio social"
               )
             )
           )
