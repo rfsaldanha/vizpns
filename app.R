@@ -621,6 +621,7 @@ server <- function(input, output) {
     )
   })
 
+  # Data function
   dados <- reactive({
     req(input$sel_indicador)
     req(input$sel_abr_tipo)
@@ -628,10 +629,12 @@ server <- function(input, output) {
     req(input$sel_ano)
 
     if (length(cod_indicador_selecionado()) > 0) {
+      # Retrieve data from table
       res <- get(tab_indicador()) %>%
         filter(indicador == cod_indicador_selecionado()) %>%
         filter(abr_tipo == !!input$sel_abr_tipo)
 
+      # Filter year
       if (input$sel_ano == "2013 - 2019") {
         res <- res %>%
           filter(ano %in% c(2013, 2019))
@@ -640,6 +643,7 @@ server <- function(input, output) {
           filter(ano == !!input$sel_ano)
       }
 
+      # Percentage round
       if (input$sel_unidade == "Percentual") {
         res <- res %>%
           mutate(
@@ -655,6 +659,7 @@ server <- function(input, output) {
       #         mutate(abr_nome = fct_relevel(abr_nome, c("Rondônia", "Acre", "Amazonas", "Roraima", "Pará", "Amapá", "Tocantins", "Maranhão", "Piauí", "Ceará", "Rio Grande do Norte", "Paraíba", "Pernambuco", "Alagoas", "Sergipe", "Bahia", "Minas Gerais", "Espírito Santo", "Rio de Janeiro", "São Paulo", "Paraná", "Santa Catarina", "Rio Grande do Sul", "Mato Grosso do Sul", "Mato Grosso", "Goiás", "Distrito Federal")))
       # }
 
+      # Remove unused column and return values
       res %>%
         select(-TS_INSERTION) %>%
         distinct()
