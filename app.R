@@ -666,11 +666,13 @@ server <- function(input, output) {
     }
   })
 
+  # Main plot
   output$distPlot <- renderHighchart({
     req(input$sel_abr_tipo)
     req(input$sel_unidade)
     req(input$sel_ano)
 
+    # Create plot title
     titulo <- paste0(
       input$sel_indicador,
       " - ",
@@ -679,6 +681,7 @@ server <- function(input, output) {
       input$sel_ano
     )
 
+    # Colors
     if (input$sel_abr_tipo == "Unidades da Federação") {
       cor_barra <- "steelblue"
     } else if (input$sel_abr_tipo == "Grandes Regiões") {
@@ -709,73 +712,13 @@ server <- function(input, output) {
       cor_barra <- "red"
     }
 
+    # Create plot
     if (length(cod_indicador_selecionado()) > 0) {
       if (nrow(dados()) > 0) {
-        if (input$sel_ano == "2013 - 2019") {
-          res <- dados() %>%
-            mutate(label_error_bar = paste("Intervalo de confiança", ano))
-
-          indi_chart <- highchart() %>%
-            hc_chart(
-              events = list(
-                load = JS(
-                  "function () {
-                            this.series[0].update({
-                              id: 'secondColumnSeries'
-                            }, false);
-                            this.series[1].update({
-                              id: 'firstColumnSeries'
-                            }, false);
-                            this.series[2].update({
-                              linkedTo: 'secondColumnSeries'
-                            }, false);
-                            this.series[3].update({
-                              linkedTo: 'firstColumnSeries'
-                            });
-                          }"
-                )
-              )
-            ) %>%
-            hc_xAxis(categories = res$abr_nome) %>%
-            hc_legend(enabled = TRUE) %>%
-            hc_title(text = titulo) %>%
-            hc_tooltip(crosshairs = TRUE, shared = TRUE, valueDecimals = 2) %>%
-            hc_exporting(
-              enabled = TRUE,
-              buttons = list(
-                contextButton = list(menuItems = lista_opcoes_grafico)
-              )
-            ) %>%
-            hc_credits(
-              enabled = TRUE,
-              text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
-              href = "https://pcdas.icict.fiocruz.br"
-            ) %>%
-            hc_add_series(
-              type = "bar",
-              data = res,
-              hcaes(y = valor, x = abr_nome, group = ano),
-              color = c("purple", "orange")
-            ) %>%
-            hc_add_series(
-              data = res,
-              type = "errorbar",
-              hcaes(
-                x = abr_nome,
-                low = interv_inf,
-                high = interv_sup,
-                group = label_error_bar,
-                grouping = TRUE
-              )
-            )
-
-          # Proporção, eixo X até 100
-          if (input$sel_unidade == "Percentual" & input$sel_eixo_x == 1) {
-            indi_chart <- indi_chart %>%
-              hc_yAxis(max = 100)
-          }
-        } else {
-          if (tab_indicador() == "tb_dicotomicos") {
+        # Dicotomic indicators
+        if (tab_indicador() == "tb_dicotomicos") {
+          # Single year
+          if (input$sel_ano != "2013 - 2019") {
             indi_chart <- highchart() %>%
               hc_xAxis(categories = dados()$abr_nome) %>%
               hc_legend(enabled = FALSE) %>%
@@ -857,34 +800,33 @@ server <- function(input, output) {
                 color = "black",
                 name = "Intervalo de confiança"
               )
-          } else if (tab_indicador() == "tb_politomicos") {
+          } else {
+            # Multiple year (2013 - 2019)
             res <- dados() %>%
               distinct() %>%
-              mutate(
-                label_error_bar = paste("Intervalo de confiança", tipo_valor)
-              )
+              mutate(label_error_bar = paste("Intervalo de confiança", ano))
 
             indi_chart <- highchart() %>%
-              # hc_chart(
-              #   events = list(
-              #     load = JS(
-              #       "function () {
-              #               this.series[0].update({
-              #                 id: 'secondColumnSeries'
-              #               }, false);
-              #               this.series[1].update({
-              #                 id: 'firstColumnSeries'
-              #               }, false);
-              #               this.series[2].update({
-              #                 linkedTo: 'secondColumnSeries'
-              #               }, false);
-              #               this.series[3].update({
-              #                 linkedTo: 'firstColumnSeries'
-              #               });
-              #             }"
-              #     )
-              #   )
-              # ) %>%
+              hc_chart(
+                events = list(
+                  load = JS(
+                    "function () {
+                            this.series[0].update({
+                              id: 'secondColumnSeries'
+                            }, false);
+                            this.series[1].update({
+                              id: 'firstColumnSeries'
+                            }, false);
+                            this.series[2].update({
+                              linkedTo: 'secondColumnSeries'
+                            }, false);
+                            this.series[3].update({
+                              linkedTo: 'firstColumnSeries'
+                            });
+                          }"
+                  )
+                )
+              ) %>%
               hc_xAxis(categories = res$abr_nome) %>%
               hc_legend(enabled = TRUE) %>%
               hc_title(text = titulo) %>%
@@ -907,12 +849,9 @@ server <- function(input, output) {
               hc_add_series(
                 type = "bar",
                 data = res,
-                hcaes(
-                  y = valor,
-                  x = abr_nome,
-                  group = tipo_valor
-                ),
-                id = unique(res$tipo_valor)
+                hcaes(y = valor, x = abr_nome, group = ano),
+                id = unique(res$ano),
+                color = c("purple", "orange")
               ) %>%
               hc_add_series(
                 data = res,
@@ -924,78 +863,138 @@ server <- function(input, output) {
                   group = label_error_bar,
                   grouping = TRUE
                 ),
-                linkedTo = unique(res$tipo_valor)
+                linkedTo = unique(res$ano)
               )
-          } else if (tab_indicador() == "tb_media") {
-            res <- dados() %>%
-              distinct()
 
-            indi_chart <- highchart() %>%
-              hc_xAxis(categories = res$abr_nome) %>%
-              hc_legend(enabled = FALSE) %>%
-              hc_title(text = titulo) %>%
-              hc_tooltip(
-                crosshairs = TRUE,
-                shared = TRUE,
-                valueDecimals = 2
-              ) %>%
-              hc_exporting(
-                enabled = TRUE,
-                buttons = list(
-                  contextButton = list(menuItems = lista_opcoes_grafico)
-                )
-              ) %>%
-              hc_credits(
-                enabled = TRUE,
-                text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
-                href = "https://pcdas.icict.fiocruz.br"
-              ) %>%
-              hc_add_series(
-                type = "bar",
-                data = res,
-                hcaes(
-                  y = valor,
-                  x = abr_nome
-                )
-              ) %>%
-              hc_add_series(
-                data = res,
-                type = "errorbar",
-                hcaes(
-                  x = abr_nome,
-                  low = interv_inf,
-                  high = interv_sup
-                )
-              )
+            # Proporção, eixo X até 100
+            if (input$sel_unidade == "Percentual" & input$sel_eixo_x == 1) {
+              indi_chart <- indi_chart %>%
+                hc_yAxis(max = 100)
+            }
+          }
+        } else if (tab_indicador() == "tb_politomicos") {
+          res <- dados() %>%
+            distinct() %>%
+            mutate(
+              label_error_bar = paste("Intervalo de confiança", tipo_valor)
+            )
+
+          # If multiple years (2013 - 2019)
+          if (input$sel_ano == "2013 - 2019") {
+            res$abr_nome <- paste(res$abr_nome, "-", res$ano)
           }
 
-          # Proporção, eixo X até 100
-          if (input$sel_unidade == "Percentual" & input$sel_eixo_x == 1) {
-            indi_chart <- indi_chart %>%
-              hc_yAxis(max = 100)
-          }
-
-          # Observação sobre CVs
-          lista_cv <- dados() %>%
-            filter(cv > 30) %>%
-            distinct(abr_nome) %>%
-            pull(abr_nome)
-
-          if (length(lista_cv) > 0) {
-            indi_chart <- indi_chart %>%
-              hc_caption(
-                text = paste0(
-                  "<b>CVs maiores que 30%.</b> (",
-                  paste(lista_cv, collapse = ", "),
-                  ")"
-                )
+          indi_chart <- highchart() %>%
+            hc_xAxis(categories = unique(res$abr_nome)) %>%
+            hc_legend(enabled = TRUE) %>%
+            hc_title(text = titulo) %>%
+            hc_tooltip(
+              crosshairs = TRUE,
+              shared = TRUE,
+              valueDecimals = 2
+            ) %>%
+            hc_exporting(
+              enabled = TRUE,
+              buttons = list(
+                contextButton = list(menuItems = lista_opcoes_grafico)
               )
-          }
+            ) %>%
+            hc_credits(
+              enabled = TRUE,
+              text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
+              href = "https://pcdas.icict.fiocruz.br"
+            ) %>%
+            hc_add_series(
+              type = "bar",
+              data = res,
+              hcaes(
+                y = valor,
+                x = abr_nome,
+                group = tipo_valor
+              ),
+              id = unique(res$tipo_valor)
+            ) %>%
+            hc_add_series(
+              data = res,
+              type = "errorbar",
+              hcaes(
+                x = abr_nome,
+                low = interv_inf,
+                high = interv_sup,
+                group = label_error_bar,
+                grouping = TRUE
+              ),
+              linkedTo = unique(res$tipo_valor)
+            )
+        } else if (tab_indicador() == "tb_media") {
+          res <- dados() %>%
+            distinct()
+
+          indi_chart <- highchart() %>%
+            hc_xAxis(categories = res$abr_nome) %>%
+            hc_legend(enabled = FALSE) %>%
+            hc_title(text = titulo) %>%
+            hc_tooltip(
+              crosshairs = TRUE,
+              shared = TRUE,
+              valueDecimals = 2
+            ) %>%
+            hc_exporting(
+              enabled = TRUE,
+              buttons = list(
+                contextButton = list(menuItems = lista_opcoes_grafico)
+              )
+            ) %>%
+            hc_credits(
+              enabled = TRUE,
+              text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
+              href = "https://pcdas.icict.fiocruz.br"
+            ) %>%
+            hc_add_series(
+              type = "bar",
+              data = res,
+              hcaes(
+                y = valor,
+                x = abr_nome
+              )
+            ) %>%
+            hc_add_series(
+              data = res,
+              type = "errorbar",
+              hcaes(
+                x = abr_nome,
+                low = interv_inf,
+                high = interv_sup
+              )
+            )
         }
 
-        # Return
-        indi_chart
+        # Proporção, eixo X até 100
+        if (input$sel_unidade == "Percentual" & input$sel_eixo_x == 1) {
+          indi_chart <- indi_chart %>%
+            hc_yAxis(max = 100)
+        }
+
+        # Observação sobre CVs
+        lista_cv <- dados() %>%
+          filter(cv > 30) %>%
+          distinct(abr_nome) %>%
+          pull(abr_nome)
+
+        if (length(lista_cv) > 0) {
+          indi_chart <- indi_chart %>%
+            hc_caption(
+              text = paste0(
+                "<b>CVs maiores que 30%.</b> (",
+                paste(lista_cv, collapse = ", "),
+                ")"
+              )
+            )
+        }
       }
+
+      # Return
+      indi_chart
     }
   })
 
