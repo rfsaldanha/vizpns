@@ -388,64 +388,64 @@ ui <- navbarPage(
       )
     )
   ),
-  tabPanel(
-    title = "Consulta por indicadores",
-    sidebarLayout(
-      sidebarPanel(
-        width = 12,
-        fluidRow(
-          column(
-            width = 12,
-            selectInput(
-              inputId = "comp_sel_modulo",
-              label = "Módulo",
-              choices = c(
-                "Q - Doenças Crônicas",
-                "N - Percepção do Estado de Saúde",
-                "P - Estilos de vida / Alimentação",
-                "P - Estilos de vida / Consumo de álcool",
-                "P - Estilos de vida / Prática de atividade física",
-                "P - Estilos de vida / Tabagismo",
-                "W - Antropometria",
-                "U - Saúde Bucal",
-                "R - Saúde da Mulher",
-                "O - Acidentes",
-                "V - Violências",
-                "I - Cobertura de plano de saúde",
-                "J - Utilização de Serviços de Saúde ",
-                "K - Saúde dos idosos",
-                "G - Deficiências",
-                "S - Saúde da Mulher / Pré-natal",
-                "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias",
-                "Y - Atividade Sexual",
-                "Z - Paternidade e Pré-natal do parceiro",
-                "M - Características do trabalho e apoio social"
-              )
-            )
-          )
-        ),
-        fluidRow(
-          column(
-            width = 4,
-            uiOutput(outputId = "comp_sel_abr_UI")
-          ),
-          column(
-            width = 6,
-            uiOutput(outputId = "comp_sel_abr_elemento_UI")
-          ),
-          column(
-            width = 2,
-            uiOutput(outputId = "comp_sel_eixo_x_UI")
-          )
-        )
-      ),
+  # tabPanel(
+  #   title = "Consulta por indicadores",
+  #   sidebarLayout(
+  #     sidebarPanel(
+  #       width = 12,
+  #       fluidRow(
+  #         column(
+  #           width = 12,
+  #           selectInput(
+  #             inputId = "comp_sel_modulo",
+  #             label = "Módulo",
+  #             choices = c(
+  #               "Q - Doenças Crônicas",
+  #               "N - Percepção do Estado de Saúde",
+  #               "P - Estilos de vida / Alimentação",
+  #               "P - Estilos de vida / Consumo de álcool",
+  #               "P - Estilos de vida / Prática de atividade física",
+  #               "P - Estilos de vida / Tabagismo",
+  #               "W - Antropometria",
+  #               "U - Saúde Bucal",
+  #               "R - Saúde da Mulher",
+  #               "O - Acidentes",
+  #               "V - Violências",
+  #               "I - Cobertura de plano de saúde",
+  #               "J - Utilização de Serviços de Saúde ",
+  #               "K - Saúde dos idosos",
+  #               "G - Deficiências",
+  #               "S - Saúde da Mulher / Pré-natal",
+  #               "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias",
+  #               "Y - Atividade Sexual",
+  #               "Z - Paternidade e Pré-natal do parceiro",
+  #               "M - Características do trabalho e apoio social"
+  #             )
+  #           )
+  #         )
+  #       ),
+  #       fluidRow(
+  #         column(
+  #           width = 4,
+  #           uiOutput(outputId = "comp_sel_abr_UI")
+  #         ),
+  #         column(
+  #           width = 6,
+  #           uiOutput(outputId = "comp_sel_abr_elemento_UI")
+  #         ),
+  #         column(
+  #           width = 2,
+  #           uiOutput(outputId = "comp_sel_eixo_x_UI")
+  #         )
+  #       )
+  #     ),
 
-      mainPanel(
-        width = 12,
-        highchartOutput(outputId = "comp_grafico", height = 800)
-      )
-    )
-  )
+  #     mainPanel(
+  #       width = 12,
+  #       highchartOutput(outputId = "comp_grafico", height = 800)
+  #     )
+  #   )
+  # )
 )
 
 # Server
