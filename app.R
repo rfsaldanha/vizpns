@@ -276,6 +276,32 @@ dic <- tbl(conn, "tb_dicionario") %>%
 # Base mapa UFs
 uf_shp <- readRDS(file = "data/uf_shp.RDS")
 
+# Indicadores de populações vulneráveis
+vul_sel_indi <- c(
+  "B002P",
+  "I002P",
+  "J001P",
+  "K002P",
+  "M017P",
+  "N001P",
+  "O006P",
+  "P002P",
+  "P012P",
+  "P014P",
+  "P020P",
+  "Q019P",
+  "R004P",
+  "R009P",
+  "R011P",
+  "S004P",
+  "U005P",
+  "V001P",
+  "W002P",
+  "Y002P",
+  "Y004P",
+  "Z003P",
+  "Z004P"
+)
 
 # UI
 ui <- navbarPage(
@@ -391,64 +417,97 @@ ui <- navbarPage(
       )
     )
   ),
-  # tabPanel(
-  #   title = "Consulta por indicadores",
-  #   sidebarLayout(
-  #     sidebarPanel(
-  #       width = 12,
-  #       fluidRow(
-  #         column(
-  #           width = 12,
-  #           selectInput(
-  #             inputId = "comp_sel_modulo",
-  #             label = "Módulo",
-  #             choices = c(
-  #               "Q - Doenças Crônicas",
-  #               "N - Percepção do Estado de Saúde",
-  #               "P - Estilos de vida / Alimentação",
-  #               "P - Estilos de vida / Consumo de álcool",
-  #               "P - Estilos de vida / Prática de atividade física",
-  #               "P - Estilos de vida / Tabagismo",
-  #               "W - Antropometria",
-  #               "U - Saúde Bucal",
-  #               "R - Saúde da Mulher",
-  #               "O - Acidentes",
-  #               "V - Violências",
-  #               "I - Cobertura de plano de saúde",
-  #               "J - Utilização de Serviços de Saúde ",
-  #               "K - Saúde dos idosos",
-  #               "G - Deficiências",
-  #               "S - Saúde da Mulher / Pré-natal",
-  #               "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias",
-  #               "Y - Atividade Sexual",
-  #               "Z - Paternidade e Pré-natal do parceiro",
-  #               "M - Características do trabalho e apoio social"
-  #             )
-  #           )
-  #         )
-  #       ),
-  #       fluidRow(
-  #         column(
-  #           width = 4,
-  #           uiOutput(outputId = "comp_sel_abr_UI")
-  #         ),
-  #         column(
-  #           width = 6,
-  #           uiOutput(outputId = "comp_sel_abr_elemento_UI")
-  #         ),
-  #         column(
-  #           width = 2,
-  #           uiOutput(outputId = "comp_sel_eixo_x_UI")
-  #         )
-  #       )
-  #     ),
 
-  #     mainPanel(
-  #       width = 12,
-  #       highchartOutput(outputId = "comp_grafico", height = 800)
-  #     )
-  #   )
-  # )
+  tabPanel(
+    title = "Comparação de indicadores",
+    sidebarLayout(
+      sidebarPanel(
+        width = 12,
+        fluidRow(
+          column(
+            width = 12,
+            selectInput(
+              inputId = "comp_sel_modulo",
+              label = "Módulo",
+              choices = c(
+                "Q - Doenças Crônicas",
+                "N - Percepção do Estado de Saúde",
+                "P - Estilos de vida / Alimentação",
+                "P - Estilos de vida / Consumo de álcool",
+                "P - Estilos de vida / Prática de atividade física",
+                "P - Estilos de vida / Tabagismo",
+                "W - Antropometria",
+                "U - Saúde Bucal",
+                "R - Saúde da Mulher",
+                "O - Acidentes",
+                "V - Violências",
+                "I - Cobertura de plano de saúde",
+                "J - Utilização de Serviços de Saúde ",
+                "K - Saúde dos idosos",
+                "G - Deficiências",
+                "S - Saúde da Mulher / Pré-natal",
+                "S - Saúde da Mulher / Assistência ao parto",
+                "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias",
+                "Y - Atividade Sexual",
+                "Z - Paternidade e Pré-natal do parceiro",
+                "M - Características do trabalho e apoio social",
+                "L - Crianças de até 2 anos",
+                "E - Características de trabalho das pessoas 14 anos ou mais de idade",
+                "T - Doenças transmissíveis"
+              )
+            )
+          )
+        ),
+        fluidRow(
+          column(
+            width = 4,
+            uiOutput(outputId = "comp_sel_abr_UI")
+          ),
+          column(
+            width = 6,
+            uiOutput(outputId = "comp_sel_abr_elemento_UI")
+          ),
+          column(
+            width = 2,
+            uiOutput(outputId = "comp_sel_eixo_x_UI")
+          )
+        )
+      ),
+
+      mainPanel(
+        width = 12,
+        highchartOutput(outputId = "comp_grafico", height = 800)
+      )
+    )
+  ),
+
+  tabPanel(
+    title = "Populações vulneráveis",
+    sidebarLayout(
+      sidebarPanel(
+        width = 12,
+        fluidRow(
+          column(
+            width = 4,
+            uiOutput(outputId = "vul_sel_abr_UI")
+          ),
+          column(
+            width = 6,
+            uiOutput(outputId = "vul_sel_abr_elemento_UI")
+          ),
+          column(
+            width = 2,
+            uiOutput(outputId = "vul_sel_eixo_x_UI")
+          )
+        )
+      ),
+
+      mainPanel(
+        width = 12,
+        highchartOutput(outputId = "vul_grafico", height = 800)
+      )
+    )
+  )
 )
 
 # Server
@@ -1341,6 +1400,207 @@ server <- function(input, output) {
           input$comp_sel_modulo,
           " - ",
           input$comp_sel_abr_elemento,
+          " - ",
+          unique(indi_grafico$ano)[1]
+        )
+
+        res <- highchart() %>%
+          hc_xAxis(categories = unique(indi_grafico$nome)) %>%
+          hc_legend(enabled = FALSE) %>%
+          hc_title(text = titulo_grafico) %>%
+          hc_tooltip(crosshairs = TRUE, shared = TRUE, valueDecimals = 2) %>%
+          hc_exporting(
+            enabled = TRUE,
+            buttons = list(
+              contextButton = list(menuItems = lista_opcoes_grafico)
+            )
+          ) %>%
+          hc_credits(
+            enabled = TRUE,
+            text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
+            href = "https://pcdas.icict.fiocruz.br"
+          ) %>%
+          hc_add_series(
+            type = "bar",
+            data = indi_grafico,
+            hcaes(y = valor, x = nome),
+            color = ifelse(
+              unique(indi_grafico$ano)[1] == "2019",
+              "purple",
+              "orange"
+            ),
+            name = "Valor"
+          ) %>%
+          hc_add_series(
+            data = list_parse(mutate(
+              indi_grafico,
+              low = interv_inf,
+              high = interv_sup
+            )),
+            type = "errorbar",
+            color = "black",
+            name = "Intervalo de confiança"
+          )
+
+        if (input$comp_sel_eixo_x == 1) {
+          res <- res %>% hc_yAxis(max = 100)
+        }
+
+        res
+      }
+    }
+  })
+
+  # Aba populações vulneráveis
+  output$vul_sel_abr_UI <- renderUI({
+    req(input$comp_sel_modulo)
+
+    res1 <- get(tab_indicador()) %>%
+      filter(indicador %in% vul_sel_indi) %>%
+      distinct(abr_tipo) %>%
+      filter(
+        abr_tipo %in%
+          c("Total", "Grandes Regiões", "Unidades da Federação", "Capitais")
+      ) %>%
+      pull(abr_tipo)
+
+    res1 <- sort(factor(
+      res1,
+      levels = c(
+        "Total",
+        "Grandes Regiões",
+        "Unidades da Federação",
+        "Capitais"
+      ),
+      ordered = TRUE
+    ))
+
+    selectInput(inputId = "vul_sel_abr", label = "Abrangência", choices = res1)
+  })
+
+  output$vul_sel_abr_elemento_UI <- renderUI({
+    req(input$vul_sel_abr)
+
+    res <- get(tab_indicador()) %>%
+      filter(abr_tipo == !!input$vul_sel_abr) %>%
+      distinct(abr_nome) %>%
+      pull(abr_nome)
+
+    selectInput(
+      inputId = "vul_sel_abr_elemento",
+      label = "Unidade",
+      choices = res
+    )
+  })
+
+  output$vul_sel_eixo_x_UI <- renderUI({
+    radioButtons(
+      "vul_sel_eixo_x",
+      label = "Escala do gráfico",
+      choices = list("Fixo em 100%" = 1, "Adaptativo" = 2),
+      selected = 2
+    )
+  })
+
+  output$vul_grafico <- renderHighchart({
+    req(input$vul_sel_abr_elemento)
+
+    lista_indi <- dic %>%
+      filter(cod %in% vul_sel_indi) %>%
+      select(cod, nome)
+
+    indi_grafico <- get(tab_indicador()) %>%
+      filter(abr_tipo == !!input$vul_sel_abr) %>%
+      filter(abr_nome == !!input$vul_sel_abr_elemento) %>%
+      filter(ano %in% c(2013, 2019)) %>%
+      filter(indicador %in% lista_indi$cod) %>%
+      mutate(
+        valor = round(valor * 100, 1),
+        interv_inf = round(interv_inf * 100, 1),
+        interv_sup = round(interv_sup * 100, 1)
+      ) %>%
+      left_join(lista_indi, by = c("indicador" = "cod")) %>%
+      mutate(label_error_bar = paste("Intervalo de confiança", ano)) %>%
+      arrange(nome) %>%
+      group_by(nome) %>%
+      mutate(freq = n()) %>%
+      ungroup() %>%
+      arrange(desc(freq)) %>%
+      select(-freq)
+
+    if (nrow(indi_grafico) > 0) {
+      if (length(unique(indi_grafico$ano)) == 2) {
+        titulo_grafico <- paste0(
+          # input$comp_sel_modulo,
+          # " - ",
+          input$vul_sel_abr_elemento,
+          " - 2013 - 2019"
+        )
+
+        res <- highchart() %>%
+          hc_chart(
+            events = list(
+              load = JS(
+                "function () {
+                            this.series[0].update({
+                              id: 'secondColumnSeries'
+                            }, false);
+                            this.series[1].update({
+                              id: 'firstColumnSeries'
+                            }, false);
+                            this.series[2].update({
+                              linkedTo: 'secondColumnSeries'
+                            }, false);
+                            this.series[3].update({
+                              linkedTo: 'firstColumnSeries'
+                            });
+                          }"
+              )
+            )
+          ) %>%
+          hc_xAxis(categories = unique(indi_grafico$nome)) %>%
+          hc_legend(enabled = TRUE) %>%
+          hc_title(text = titulo_grafico) %>%
+          hc_tooltip(crosshairs = TRUE, shared = TRUE, valueDecimals = 2) %>%
+          hc_exporting(
+            enabled = TRUE,
+            buttons = list(
+              contextButton = list(menuItems = lista_opcoes_grafico)
+            )
+          ) %>%
+          hc_credits(
+            enabled = TRUE,
+            text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
+            href = "https://pcdas.icict.fiocruz.br"
+          ) %>%
+          hc_add_series(
+            type = "bar",
+            data = indi_grafico,
+            hcaes(y = valor, x = nome, group = ano),
+            color = c("purple", "orange")
+          ) %>%
+          hc_add_series(
+            data = indi_grafico,
+            type = "errorbar",
+            hcaes(
+              x = nome,
+              low = interv_inf,
+              high = interv_sup,
+              group = label_error_bar,
+              grouping = TRUE
+            )
+          )
+
+        if (input$vul_sel_eixo_x == 1) {
+          res <- res %>% hc_yAxis(max = 100)
+        }
+
+        res
+      } else {
+        titulo_grafico <- paste0(
+          # input$comp_sel_modulo,
+          # " - ",
+          input$vul_sel_abr_elemento,
           " - ",
           unique(indi_grafico$ano)[1]
         )
