@@ -313,7 +313,10 @@ ui <- navbarPage(
                 "B - Visitas domiciliares de Equipe de Saúde da Família e Agentes de Endemias",
                 "Y - Atividade Sexual",
                 "Z - Paternidade e Pré-natal do parceiro",
-                "M - Características do trabalho e apoio social"
+                "M - Características do trabalho e apoio social",
+                "L - Crianças de até 2 anos",
+                "E - Características de trabalho das pessoas 14 anos ou mais de idade",
+                "T - Doenças transmissíveis"
               )
             )
           )
