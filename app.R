@@ -1531,8 +1531,8 @@ server <- function(input, output) {
     if (nrow(indi_grafico) > 0) {
       if (length(unique(indi_grafico$ano)) == 2) {
         titulo_grafico <- paste0(
-          # input$comp_sel_modulo,
-          # " - ",
+          "Populações vulneráveis",
+          " - ",
           input$vul_sel_abr_elemento,
           " - 2013 - 2019"
         )
@@ -1598,8 +1598,8 @@ server <- function(input, output) {
         res
       } else {
         titulo_grafico <- paste0(
-          # input$comp_sel_modulo,
-          # " - ",
+          "Populações vulneráveis",
+          " - ",
           input$vul_sel_abr_elemento,
           " - ",
           unique(indi_grafico$ano)[1]
