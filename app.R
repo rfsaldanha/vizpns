@@ -264,7 +264,25 @@ tb_media <- tbl(conn, "tb_media") %>%
 
 # Prioritários
 tb_prioritarios <- tbl(conn, "tb_prioritarios") %>%
-  collect()
+  collect() |>
+  mutate(
+    valor = as.numeric(gsub(x = valor, pattern = ",", replacement = ".")),
+    interv_inf = as.numeric(gsub(
+      x = interv_inf,
+      pattern = ",",
+      replacement = "."
+    )),
+    interv_sup = as.numeric(gsub(
+      x = interv_sup,
+      pattern = ",",
+      replacement = "."
+    )),
+    cv = as.numeric(gsub(
+      x = cv,
+      pattern = ",",
+      replacement = "."
+    ))
+  )
 
 # Dicionário
 dic <- tbl(conn, "tb_dicionario") %>%
@@ -282,29 +300,15 @@ uf_shp <- readRDS(file = "data/uf_shp.RDS")
 
 # Indicadores de populações vulneráveis
 vul_sel_indi <- c(
-  "B002P",
-  "I002P",
-  "J001P",
-  "K002P",
-  "M017P",
-  "N001P",
-  "O006P",
-  "P002P",
-  "P012P",
-  "P014P",
-  "P020P",
-  "Q019P",
-  "R004P",
-  "R009P",
-  "R011P",
-  "S004P",
-  "U005P",
-  "V001P",
-  "W002P",
-  "Y002P",
-  "Y004P",
-  "Z003P",
-  "Z004P"
+  "BP01",
+  "IP01",
+  "KP01",
+  "MP01",
+  "NP01",
+  "OP01",
+  "PP01",
+  "PP02",
+  "PP04"
 )
 
 # UI
@@ -492,15 +496,30 @@ ui <- navbarPage(
         width = 12,
         fluidRow(
           column(
-            width = 4,
+            width = 10,
+            uiOutput(outputId = "vul_sel_indi_UI")
+          ),
+          column(
+            width = 2,
+            actionButton(
+              inputId = "vul_indi_def",
+              label = "Ver definição do indicador",
+              icon = icon("info"),
+              class = "btn-primary"
+            ),
+            tags$style(
+              type = 'text/css',
+              "#vul_indi_def { width:100%; margin-top: 25px;}"
+            )
+          )
+        ),
+        fluidRow(
+          column(
+            width = 6,
             uiOutput(outputId = "vul_sel_abr_UI")
           ),
           column(
             width = 6,
-            uiOutput(outputId = "vul_sel_abr_elemento_UI")
-          ),
-          column(
-            width = 2,
             uiOutput(outputId = "vul_sel_eixo_x_UI")
           )
         )
@@ -1456,45 +1475,54 @@ server <- function(input, output) {
   })
 
   # Aba populações vulneráveis
-  output$vul_sel_abr_UI <- renderUI({
-    req(input$comp_sel_modulo)
+  output$vul_sel_indi_UI <- renderUI({
+    res1 <- dic %>%
+      filter(tabela_indicador == "tb_prioritarios") %>%
+      select(cod, nome)
 
-    res1 <- get(tab_indicador()) %>%
-      filter(indicador %in% vul_sel_indi) %>%
-      distinct(abr_tipo) %>%
-      filter(
-        abr_tipo %in%
-          c("Total", "Grandes Regiões", "Unidades da Federação", "Capitais")
-      ) %>%
-      pull(abr_tipo)
+    res2 <- setNames(res1$cod, res1$nome)
 
-    res1 <- sort(factor(
-      res1,
-      levels = c(
-        "Total",
-        "Grandes Regiões",
-        "Unidades da Federação",
-        "Capitais"
-      ),
-      ordered = TRUE
-    ))
-
-    selectInput(inputId = "vul_sel_abr", label = "Abrangência", choices = res1)
+    selectInput(inputId = "vul_sel_indi", label = "Indicador", choices = res2)
   })
 
-  output$vul_sel_abr_elemento_UI <- renderUI({
-    req(input$vul_sel_abr)
+  output$vul_sel_abr_UI <- renderUI({
+    req(input$vul_sel_indi)
 
-    res <- get(tab_indicador()) %>%
-      filter(abr_tipo == !!input$vul_sel_abr) %>%
-      distinct(abr_nome) %>%
-      pull(abr_nome)
+    res1 <- tb_prioritarios %>%
+      filter(indicador %in% !!input$vul_sel_indi) %>%
+      pull(abr_tipo)
 
-    selectInput(
-      inputId = "vul_sel_abr_elemento",
-      label = "Unidade",
-      choices = res
+    abrs <- tibble(
+      cod = c(
+        "uf",
+        "região",
+        "urb_rur",
+        "rend_per_capita",
+        "raça",
+        "fx_idade",
+        "capital",
+        "gescol",
+        "total"
+      ),
+      name = c(
+        "Unidades da Federação",
+        "Grandes Regiões",
+        "Situação urbano/rural",
+        "Rendimento domiciliar per capita",
+        "Raça/Cor",
+        "Faixa de idade",
+        "Capitais",
+        "Escolaridade",
+        "Total"
+      )
     )
+
+    res2 <- abrs %>%
+      filter(cod %in% res1)
+
+    res3 <- setNames(res2$cod, res2$name)
+
+    selectInput(inputId = "vul_sel_abr", label = "Abrangência", choices = res3)
   })
 
   output$vul_sel_eixo_x_UI <- renderUI({
@@ -1507,153 +1535,152 @@ server <- function(input, output) {
   })
 
   output$vul_grafico <- renderHighchart({
-    req(input$vul_sel_abr_elemento)
+    req(input$vul_sel_indi)
+    req(input$vul_sel_abr)
 
-    lista_indi <- dic %>%
-      filter(cod %in% vul_sel_indi) %>%
-      select(cod, nome)
+    res1 <- tb_prioritarios %>%
+      filter(indicador %in% !!input$vul_sel_indi) %>%
+      filter(abr_tipo == !!input$vul_sel_abr)
 
-    indi_grafico <- get(tab_indicador()) %>%
-      filter(abr_tipo == !!input$vul_sel_abr) %>%
-      filter(abr_nome == !!input$vul_sel_abr_elemento) %>%
-      filter(ano %in% c(2013, 2019)) %>%
-      filter(indicador %in% lista_indi$cod) %>%
-      mutate(
-        valor = round(valor * 100, 1),
-        interv_inf = round(interv_inf * 100, 1),
-        interv_sup = round(interv_sup * 100, 1)
-      ) %>%
-      left_join(lista_indi, by = c("indicador" = "cod")) %>%
-      mutate(label_error_bar = paste("Intervalo de confiança", ano)) %>%
-      arrange(nome) %>%
-      group_by(nome) %>%
-      mutate(freq = n()) %>%
-      ungroup() %>%
-      arrange(desc(freq)) %>%
-      select(-freq)
+    print(res1)
 
-    if (nrow(indi_grafico) > 0) {
-      if (length(unique(indi_grafico$ano)) == 2) {
-        titulo_grafico <- paste0(
-          "Populações vulneráveis",
-          " - ",
-          input$vul_sel_abr_elemento,
-          " - 2013 - 2019"
-        )
+    # Create plot title
+    titulo <- dic %>%
+      filter(cod == !!input$vul_sel_indi) |>
+      mutate(nome = paste(nome, "- 2019")) |>
+      pull(nome)
 
-        res <- highchart() %>%
-          hc_chart(
-            events = list(
-              load = JS(
-                "function () {
-                            this.series[0].update({
-                              id: 'secondColumnSeries'
-                            }, false);
-                            this.series[1].update({
-                              id: 'firstColumnSeries'
-                            }, false);
-                            this.series[2].update({
-                              linkedTo: 'secondColumnSeries'
-                            }, false);
-                            this.series[3].update({
-                              linkedTo: 'firstColumnSeries'
-                            });
-                          }"
-              )
-            )
-          ) %>%
-          hc_xAxis(categories = unique(indi_grafico$nome)) %>%
-          hc_legend(enabled = TRUE) %>%
-          hc_title(text = titulo_grafico) %>%
-          hc_tooltip(crosshairs = TRUE, shared = TRUE, valueDecimals = 2) %>%
-          hc_exporting(
-            enabled = TRUE,
-            buttons = list(
-              contextButton = list(menuItems = lista_opcoes_grafico)
-            )
-          ) %>%
-          hc_credits(
-            enabled = TRUE,
-            text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
-            href = "https://pcdas.icict.fiocruz.br"
-          ) %>%
-          hc_add_series(
-            type = "bar",
-            data = indi_grafico,
-            hcaes(y = valor, x = nome, group = ano),
-            color = c("purple", "orange")
-          ) %>%
-          hc_add_series(
-            data = indi_grafico,
-            type = "errorbar",
-            hcaes(
-              x = nome,
-              low = interv_inf,
-              high = interv_sup,
-              group = label_error_bar,
-              grouping = TRUE
-            )
-          )
-
-        if (input$vul_sel_eixo_x == 1) {
-          res <- res %>% hc_yAxis(max = 100)
-        }
-
-        res
-      } else {
-        titulo_grafico <- paste0(
-          "Populações vulneráveis",
-          " - ",
-          input$vul_sel_abr_elemento,
-          " - ",
-          unique(indi_grafico$ano)[1]
-        )
-
-        res <- highchart() %>%
-          hc_xAxis(categories = unique(indi_grafico$nome)) %>%
-          hc_legend(enabled = FALSE) %>%
-          hc_title(text = titulo_grafico) %>%
-          hc_tooltip(crosshairs = TRUE, shared = TRUE, valueDecimals = 2) %>%
-          hc_exporting(
-            enabled = TRUE,
-            buttons = list(
-              contextButton = list(menuItems = lista_opcoes_grafico)
-            )
-          ) %>%
-          hc_credits(
-            enabled = TRUE,
-            text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
-            href = "https://pcdas.icict.fiocruz.br"
-          ) %>%
-          hc_add_series(
-            type = "bar",
-            data = indi_grafico,
-            hcaes(y = valor, x = nome),
-            color = ifelse(
-              unique(indi_grafico$ano)[1] == "2019",
-              "purple",
-              "orange"
-            ),
-            name = "Valor"
-          ) %>%
-          hc_add_series(
-            data = list_parse(mutate(
-              indi_grafico,
-              low = interv_inf,
-              high = interv_sup
-            )),
-            type = "errorbar",
-            color = "black",
-            name = "Intervalo de confiança"
-          )
-
-        if (input$comp_sel_eixo_x == 1) {
-          res <- res %>% hc_yAxis(max = 100)
-        }
-
-        res
-      }
+    # Colors
+    if (input$vul_sel_abr == "uf") {
+      cor_barra <- "steelblue"
+    } else if (input$vul_sel_abr == "região") {
+      cor_barra <- "mediumpurple"
+    } else if (input$vul_sel_abr == "urb_rur") {
+      cor_barra <- "orchid"
+    } else if (input$vul_sel_abr == "gescol") {
+      cor_barra <- "violet"
+    } else if (input$vul_sel_abr == "rend_per_capita") {
+      cor_barra <- "orange"
+    } else if (input$vul_sel_abr == "sexo") {
+      cor_barra <- "purple"
+    } else if (input$vul_sel_abr == "raça") {
+      cor_barra <- "mediumblue"
+    } else if (input$vul_sel_abr == "fx_idade") {
+      cor_barra <- "forestgreen"
+    } else if (input$vul_sel_abr == "capital") {
+      cor_barra <- "coral"
+    } else if (input$vul_sel_abr == "total") {
+      cor_barra <- "green"
+    } else {
+      cor_barra <- "red"
     }
+
+    indi_chart <- highchart() %>%
+      hc_xAxis(categories = res1$abr_nome) %>%
+      hc_legend(enabled = FALSE) %>%
+      hc_title(text = titulo) %>%
+      hc_tooltip(
+        crosshairs = TRUE,
+        shared = TRUE,
+        valueDecimals = 2
+      ) %>%
+      hc_exporting(
+        enabled = TRUE,
+        buttons = list(
+          contextButton = list(menuItems = lista_opcoes_grafico)
+        )
+      ) %>%
+      hc_credits(
+        enabled = TRUE,
+        text = "Fiocruz | ICICT | LIS | PCDaS | IBGE",
+        href = "https://pcdas.icict.fiocruz.br"
+      )
+
+    # Cores condicionais para as barras
+    if (input$vul_sel_abr == "uf") {
+      indi_chart <- indi_chart %>%
+        hc_add_series(
+          type = "bar",
+          data = res1,
+          hcaes(
+            y = valor,
+            x = abr_nome,
+            color = c(
+              rep("#377EB8", 7),
+              rep("#4DAF4A", 9),
+              rep("#984EA3", 4),
+              rep("#FF7F00", 3),
+              rep("#00CCCC", 4)
+            )
+          ),
+          name = "Valor"
+        )
+    } else if (input$vul_sel_abr == "região") {
+      indi_chart <- indi_chart %>%
+        hc_add_series(
+          type = "bar",
+          data = res1,
+          hcaes(
+            y = valor,
+            x = abr_nome,
+            color = c(
+              "#377EB8",
+              "#4DAF4A",
+              "#984EA3",
+              "#FF7F00",
+              "#00CCCC"
+            )
+          ),
+          name = "Valor"
+        )
+    } else {
+      indi_chart <- indi_chart %>%
+        hc_add_series(
+          type = "bar",
+          data = res1,
+          hcaes(y = valor, x = abr_nome),
+          color = cor_barra,
+          name = "Valor"
+        )
+    }
+
+    # Adiciona intervalo de confiança
+    indi_chart <- indi_chart %>%
+      hc_add_series(
+        data = list_parse(mutate(
+          res1,
+          low = interv_inf,
+          high = interv_sup
+        )),
+        type = "errorbar",
+        color = "black",
+        name = "Intervalo de confiança"
+      )
+
+    indi_chart
+  })
+
+  observeEvent(input$vul_indi_def, {
+    req(input$vul_sel_indi)
+
+    res <- dic %>%
+      filter(cod == !!input$vul_sel_indi)
+
+    res_notas <- ifelse(is.na(res$notas), "", res$notas)
+
+    showModal(
+      modalDialog(
+        easyClose = TRUE,
+        footer = modalButton("Fechar"),
+        title = res$nome,
+        h4("Definição"),
+        HTML(res$definicao),
+        h4("Método de cálculo"),
+        HTML(res$metodo_calculo),
+        h4("Notas"),
+        HTML(res_notas)
+      )
+    )
   })
 }
 
