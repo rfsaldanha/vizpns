@@ -262,6 +262,10 @@ tb_media <- tbl(conn, "tb_media") %>%
   ) %>%
   filter(!(abr_tipo == "Total" & abr_nome == "Capital"))
 
+# Prioritários
+tb_prioritarios <- tbl(conn, "tb_prioritarios") %>%
+  collect()
+
 # Dicionário
 dic <- tbl(conn, "tb_dicionario") %>%
   collect() %>%
