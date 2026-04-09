@@ -282,6 +282,11 @@ tb_prioritarios <- tbl(conn, "tb_prioritarios") %>%
       pattern = ",",
       replacement = "."
     ))
+  ) %>%
+  mutate(
+    valor = valor * 100,
+    interv_inf = interv_inf * 100,
+    interv_sup = interv_sup * 100
   )
 
 # Dicionário
@@ -496,7 +501,11 @@ ui <- navbarPage(
         width = 12,
         fluidRow(
           column(
-            width = 10,
+            width = 2,
+            uiOutput(outputId = "vul_sel_grupo_UI")
+          ),
+          column(
+            width = 8,
             uiOutput(outputId = "vul_sel_indi_UI")
           ),
           column(
@@ -1475,6 +1484,35 @@ server <- function(input, output) {
   })
 
   # Aba populações vulneráveis
+  output$vul_sel_grupo_UI <- renderUI({
+    res1 <- tibble(
+      cod = c(
+        "Mulheres ate meio SM",
+        "PPP",
+        "Pop Deficiencia",
+        "Pop Idosa",
+        "Pop Indigena",
+        "Pop LGBTQIAP"
+      ),
+      nome = c(
+        "Mulheres que recebem até meio salário mínimo",
+        "População preta e parda",
+        "População com deficiência",
+        "População idosa",
+        "População indígena",
+        "População LGBTQIAP+"
+      )
+    )
+
+    res2 <- setNames(res1$cod, res1$nome)
+
+    selectInput(
+      inputId = "vul_grupo_indi",
+      label = "Grupo prioritário",
+      choices = res2
+    )
+  })
+
   output$vul_sel_indi_UI <- renderUI({
     res1 <- dic %>%
       filter(tabela_indicador == "tb_prioritarios") %>%
@@ -1539,10 +1577,12 @@ server <- function(input, output) {
     req(input$vul_sel_abr)
 
     res1 <- tb_prioritarios %>%
-      filter(indicador %in% !!input$vul_sel_indi) %>%
+      filter(grupo_prioritario == !!input$vul_grupo_indi) %>%
+      filter(indicador == !!input$vul_sel_indi) %>%
       filter(abr_tipo == !!input$vul_sel_abr)
 
     print(res1)
+    print(unique(res1$abr_nome))
 
     # Create plot title
     titulo <- dic %>%
@@ -1655,7 +1695,13 @@ server <- function(input, output) {
         type = "errorbar",
         color = "black",
         name = "Intervalo de confiança"
-      )
+      ) %>%
+      hc_yAxis(min = 0)
+
+    # Eixo y
+    if (input$vul_sel_eixo_x == 1) {
+      indi_chart <- indi_chart %>% hc_yAxis(max = 100)
+    }
 
     indi_chart
   })
