@@ -296,6 +296,10 @@ dic <- tbl(conn, "tb_dicionario") %>%
     unidade = case_when(
       unidade == "Proporção" ~ "Percentual",
       .default = unidade
+    ),
+    nome = case_when(
+      nchar(cod) == 4 ~ paste0(nome, " - Pop. Vul."),
+      .default = nome
     )
   ) %>%
   filter(!(cod %in% c("P025P", "P008P")))
