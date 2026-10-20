@@ -566,6 +566,7 @@ server <- function(input, output) {
     } else {
       ops <- dic %>%
         filter(modulo == !!input$sel_modulo) %>%
+        filter(tabela_indicador != "tb_prioritarios") %>%
         select(nome) %>%
         distinct(nome) %>%
         pull(nome)
